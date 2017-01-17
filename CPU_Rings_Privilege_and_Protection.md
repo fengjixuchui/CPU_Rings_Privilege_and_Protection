@@ -1,4 +1,7 @@
 # CPU Rings, Privilege, and Protection
+![AI](https://github.com/nu11secur1ty/CPU_Rings_Privilege_and_Protection/blob/master/photo/633px-Priv_rings.svg.png)
+
+
 
 You probably know intuitively that applications have limited powers in Intel x86 computers and that only operating system code can perform certain tasks, but do you know how this really works? This post takes a look at x86 privilege levels, the mechanism whereby the OS and CPU conspire to restrict what user-mode programs can do. There are four privilege levels, numbered 0 (most privileged) to 3 (least privileged), and three main resources being protected: memory, I/O ports, and the ability to execute certain machine instructions. At any given time, an x86 CPU is running in a specific privilege level, which determines what code can and cannot do. These privilege levels are often described as protection rings, with the innermost ring corresponding to highest privilege. Most modern x86 kernels use only two privilege levels, 0 and 3:
 
