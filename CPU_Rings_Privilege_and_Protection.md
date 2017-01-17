@@ -3,12 +3,13 @@
 You probably know intuitively that applications have limited powers in Intel x86 computers and that only operating system code can perform certain tasks, but do you know how this really works? This post takes a look at x86 privilege levels, the mechanism whereby the OS and CPU conspire to restrict what user-mode programs can do. There are four privilege levels, numbered 0 (most privileged) to 3 (least privileged), and three main resources being protected: memory, I/O ports, and the ability to execute certain machine instructions. At any given time, an x86 CPU is running in a specific privilege level, which determines what code can and cannot do. These privilege levels are often described as protection rings, with the innermost ring corresponding to highest privilege. Most modern x86 kernels use only two privilege levels, 0 and 3:
 
 
-![AI]()
-                                                     x86 Protection Rings
+![AI](https://github.com/nu11secur1ty/CPU_Rings_Privilege_and_Protection/blob/master/photo/x86rings.png)
+
+                                                      x86 Protection Rings
 
 About 15 machine instructions, out of dozens, are restricted by the CPU to ring zero. Many others have limitations on their operands. These instructions can subvert the protection mechanism or otherwise foment chaos if allowed in user mode, so they are reserved to the kernel. An attempt to run them outside of ring zero causes a general-protection exception, like when a program uses invalid memory addresses. Likewise, access to memory and I/O ports is restricted based on privilege level. But before we look at protection mechanisms, let’s see exactly how the CPU keeps track of the current privilege level, which involves the segment selectors from the previous post. Here they are: 
 
-![AI]()segmentation
+![AI](https://github.com/nu11secur1ty/CPU_Rings_Privilege_and_Protection/blob/master/photo/segmentSelectorDataAndCode.png)
 
                                                 Segment Selectors – Data and Code
 
@@ -21,7 +22,7 @@ Due to restricted access to memory and I/O ports, user mode can do almost nothin
 The CPU protects memory at two crucial points: when a segment selector is loaded and when a page of memory is accessed with a linear address. Protection thus mirrors memory address translation where both segmentation and paging are involved. When a data segment selector is being loaded, the check below takes place: 
 
 
-![AI]()segmentProtection
+![AI](https://github.com/nu11secur1ty/CPU_Rings_Privilege_and_Protection/blob/master/photo/segmentProtection.png)
 
 
 
@@ -37,10 +38,10 @@ That leaves two juicier ones: interrupt and trap gates, which are used to handle
 
 
 
-![AI]()interruptDescriptorWithPrivilegeCheck
+![AI](https://github.com/nu11secur1ty/CPU_Rings_Privilege_and_Protection/blob/master/photo/interruptDescriptorWithPrivilegeCheck.png)
 
 
-Interrupt Descriptor with Privilege Check
+                                          Interrupt Descriptor with Privilege Check
 
 Both the DPL and the segment selector in the gate regulate access, while segment selector plus offset together nail down an entry point for the interrupt handler code. Kernels normally use the segment selector for the kernel code segment in these gate descriptors. An interrupt can never transfer control from a more-privileged to a less-privileged ring. Privilege must either stay the same (when the kernel itself is interrupted) or be elevated (when user-mode code is interrupted). In either case, the resulting CPL will be equal to to the DPL of the destination code segment; if the CPL changes, a stack switch also occurs. If an interrupt is triggered by code via an instruction like int n, one more check takes place: the gate DPL must be at the same or lower privilege as the CPL. This prevents user code from triggering random interrupts. If these checks fail – you guessed it – a general-protection exception happens. All Linux interrupt handlers end up running in ring zero.
 
